@@ -1,0 +1,69 @@
+
+A legpraktikusabb három lehetőség:
+
+---
+
+### 1️⃣ Plain text / ini fájl
+
+* **Előny:** Egyszerű, átlátható, könnyen módosítható, nincs újrafordítás.
+* **Használat:** Pontosan mint most, `config.ini` vagy `config.txt`.
+
+```ini
+saveToFile=1
+singleLineOutput=0
+```
+
+* **Betöltés:** `ifstream` + `string::find`.
+* **Mentés:** `ofstream`.
+
+**Gyorsaság:** teljesen elegendő, mert csak két változó van.
+
+---
+
+### 2️⃣ Binary fájl (.sav)
+
+* **Előny:** Szupergyors betöltés, minimális fájlméret.
+* **Hátrány:** Nem szerkeszthető kézzel.
+
+```cpp
+void saveSettingsBinary() {
+    ofstream f("settings.sav", ios::binary);
+    f.write(reinterpret_cast<char*>(&saveToFile), sizeof(saveToFile));
+    f.write(reinterpret_cast<char*>(&singleLineOutput), sizeof(singleLineOutput));
+}
+
+void loadSettingsBinary() {
+    ifstream f("settings.sav", ios::binary);
+    if (f.is_open()) {
+        f.read(reinterpret_cast<char*>(&saveToFile), sizeof(saveToFile));
+        f.read(reinterpret_cast<char*>(&singleLineOutput), sizeof(singleLineOutput));
+    }
+}
+```
+
+* **Sebesség:** maximális, de teljesen overkill két boolhoz.
+
+---
+
+### 3️⃣ Hardcoded `.cpp` változók
+
+* **Előny:** Nem kell fájl, azonnal betöltődik.
+* **Hátrány:** Ha változtatni akarod a beállítást, újra kell fordítani a programot.
+
+```cpp
+bool saveToFile = true;
+bool singleLineOutput = false;
+```
+
+* **Sebesség:** azonnali, de **nem rugalmas**.
+
+---
+
+💡 **Következtetés:**
+
+* Csak **két boolról van szó**, ezért **a legegyszerűbb a .ini / txt**.
+* A binary túlzás, a `.cpp` statikus.
+* Ha hosszú távon tervezel új beállításokat, a `.ini` a legjobb.
+
+---
+

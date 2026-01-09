@@ -1,0 +1,62 @@
+Ha nem `.ini` fájlba akarsz menteni, hanem **régi stílusban, binárisan** vagy más formátumban, akkor a `saveSettings()` függvényt át lehet írni például **bináris fájlba**, vagy akár **egyszerű `.sav` fájlba**, amit a program közvetlenül olvas vissza a memóriába.
+
+### 1️⃣ Bináris mentés
+
+Csinálhatod így:
+
+```cpp
+void saveSettingsBinary() {
+    ofstream f("config.sav", ios::binary);
+    if (f.is_open()) {
+        f.write(reinterpret_cast<char*>(&saveToFile), sizeof(saveToFile));
+        f.write(reinterpret_cast<char*>(&singleLineOutput), sizeof(singleLineOutput));
+        f.close();
+    }
+}
+
+void loadSettingsBinary() {
+    ifstream f("config.sav", ios::binary);
+    if (f.is_open()) {
+        f.read(reinterpret_cast<char*>(&saveToFile), sizeof(saveToFile));
+        f.read(reinterpret_cast<char*>(&singleLineOutput), sizeof(singleLineOutput));
+        f.close();
+    }
+}
+```
+
+* **Előny:** Gyors, pontosan a memóriában lévő értékeket menti.
+* **Hátrány:** Nem olvasható emberi szemmel, és platformfüggő lehet (endianness, `bool` mérete).
+
+### 2️⃣ Egyszerű karakteres `.sav`
+
+Régi DOS-os játékokhoz hasonlóan mentheted **egy-két karakteres formában**, pl.:
+
+```cpp
+void saveSettingsChar() {
+    ofstream f("config.sav");
+    if (f.is_open()) {
+        f << (saveToFile ? '1' : '0');
+        f << (singleLineOutput ? '1' : '0');
+        f.close();
+    }
+}
+
+void loadSettingsChar() {
+    ifstream f("config.sav");
+    if (f.is_open()) {
+        char c1, c2;
+        f.get(c1);
+        f.get(c2);
+        saveToFile = (c1 == '1');
+        singleLineOutput = (c2 == '1');
+        f.close();
+    }
+}
+```
+
+* Ez **teljesen olvashatatlan formátum** egy átlagos felhasználó számára, de **régi stílusú “sav” mentés**.
+* Könnyű és biztos, hogy nem kell `.ini` vagy `.txt`.
+
+---
+
+

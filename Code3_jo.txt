@@ -1,0 +1,186 @@
+#include <ctranslate2/translator.h>
+#include "sentencepiece_processor.h"
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+// Globális beállítások
+bool saveToFile = false;
+bool singleLineOutput = false;
+string outputFile = "translations.txt";
+
+// Globális SentencePiece processzorok
+sentencepiece::SentencePieceProcessor sp_en;
+sentencepiece::SentencePieceProcessor sp_hu;
+
+// Képernyő törlése
+void clearScreen() {
+    #ifdef _WIN32
+    system("cls");
+    #else
+    system("clear");
+    #endif
+}
+// Fordító függvény
+void translateLoop(ctranslate2::Translator& translator, sentencepiece::SentencePieceProcessor& sp_source, sentencepiece::SentencePieceProcessor& sp_target) {
+
+    cout << "\n--- FORDITO MOD ---\n";
+    cout << "Irj be egy mondatot es nyomj Entert.\n";
+    cout << "Parancsok: /back (vissza), /cls (kepernyo torles)\n\n";
+
+    string line;
+    while (true) {
+        if (!singleLineOutput) cout << "> ";
+
+        getline(cin, line);
+
+        // Parancsok kezelése
+        if (line == "/back") {
+            break; // Egyszerűen kilépünk a ciklusból
+        }
+        if (line == "/cls") {
+            clearScreen();
+            cout << "\n--- FORDITO MOD ---\n";
+            cout << "Irj be egy mondatot es nyomj Entert.\n";
+            cout << "Parancsok: /back (vissza), /cls (kepernyo torles)\n\n";
+            continue;
+        }
+
+        if (line.empty()) continue;
+
+        // 1. Tokenizálás
+        vector<string> tokens;
+        auto status = sp_source.Encode(line, &tokens);
+
+        if (!status.ok()) continue;
+        // it is important!
+        tokens.emplace_back("</s>");
+
+        if (tokens.empty()) continue;
+
+        // 2. Fordítás
+        vector<vector<string>> input = {tokens};
+
+        try {
+            ctranslate2::TranslationOptions options;
+            options.beam_size = 2;
+            options.max_decoding_length = 200;
+            options.repetition_penalty = 1.2;
+
+            auto results = translator.translate_batch(input, options);
+
+            // 3. Detokenizálás
+            string out;
+            sp_target.Decode(results[0].output(), &out);
+
+            // Kiírás
+            if (singleLineOutput) {
+                cout << "\033[1A\033[2K\r" << line << " -> " << out << endl;
+            } else {
+                cout << line << " -> " << out << endl;
+            }
+
+            if (saveToFile) {
+                ofstream f(outputFile, ios::app);
+                if (f.is_open()) {
+                    f << line << " -> " << out << "\n";
+                    f.close();
+                }
+            }
+        } catch (const std::exception& e) {
+            cerr << "Hiba: " << e.what() << endl;
+        }
+    }
+}
+
+void settingsMenu() {
+
+    while (true) {
+        cout << "\n--- BEALLITASOK ---\n";
+        cout << "1. Fajlba mentes: " << (saveToFile ? "BE" : "KI") << endl;
+        cout << "2. Egy soros kiiras (CMD-hez): " << (singleLineOutput ? "BE" : "KI") << endl;
+        cout << "3. Vissza a fomenube\n";
+        cout << "Valasztas: ";
+
+        string choice;
+        getline(cin, choice);
+
+        if (choice == "1") {
+            saveToFile = !saveToFile;
+        } else if (choice == "2") {
+            singleLineOutput = !singleLineOutput;
+        } else if (choice == "3") {
+            break;
+        }
+    }
+}
+
+int main() {
+#ifdef _WIN32
+    system("chcp 65001 > nul");
+    system("reg add HKCU\\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f > nul 2>&1");
+#endif
+
+    // Modellek betöltése
+    string en_spm_path = R"(E:\CodeBlocks\modellLLM\ct2\test\en-hu-f32\source.spm)";
+    string hu_spm_path = R"(E:\CodeBlocks\modellLLM\ct2\test\hu-en-f32\source.spm)";
+
+    cout << "Modellek betoltese..." << endl;
+
+    ifstream f_en(en_spm_path);
+    if (!f_en.good()) {
+        cerr << "HIBA: Nem talalhato a SentencePiece modellfajl: " << en_spm_path << endl;
+        return 1;
+    }
+
+    const auto status_en = sp_en.Load(en_spm_path);
+    if (!status_en.ok()) {
+        cerr << "Hiba az angol SP modell betoltesekor." << endl;
+        return 1;
+    }
+
+    ifstream f_hu(hu_spm_path);
+    if (f_hu.good()) {
+        sp_hu.Load(hu_spm_path);
+    } else {
+        sp_hu.Load(en_spm_path);
+    }
+    {
+        ctranslate2::models::ModelLoader enhu_loader(R"(E:\CodeBlocks\modellLLM\ct2\test\en-hu-f32)");
+        ctranslate2::models::ModelLoader huen_loader(R"(E:\CodeBlocks\modellLLM\ct2\test\hu-en-f32)");
+
+        ctranslate2::Translator enhu(enhu_loader);
+        ctranslate2::Translator huen(huen_loader);
+
+        while (true) {
+            cout << "\n--- FOMENU ---\n";
+            cout << "1. EN -> HU\n";
+            cout << "2. HU -> EN\n";
+            cout << "3. Beallitasok\n";
+            cout << "4. Kilepes\n";
+            cout << "Valasztas: ";
+
+            string choice;
+            getline(cin, choice);
+
+            if (choice == "1") {
+                translateLoop(enhu, sp_en, sp_hu);
+            }
+            else if (choice == "2") {
+                translateLoop(huen, sp_hu, sp_en);
+            }
+            else if (choice == "3") {
+                settingsMenu();
+            }
+            else if (choice == "4") {
+                cout << "Kilepes...\n";
+                //cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                //break;
+                exit(0);
+            }
+        }
+    }
+}

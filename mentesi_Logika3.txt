@@ -1,0 +1,61 @@
+1. Konfigurációs fájl neve
+Válassz egy nevet, pl. config.txt vagy settings.ini.
+2. Mentés (Save)
+Amikor a felhasználó kilép (vagy minden beállítás-módosítás után), írd ki a változók értékét ebbe a fájlba.
+•
+Nyisd meg a fájlt írásra (ofstream).
+•
+Írd bele az értékeket. Például:
+TOML
+saveToFile=1
+singleLineOutput=0
+(Az 1 jelenti a true-t, a 0 a false-t).
+3. Betöltés (Load)
+A main függvény legelején (mielőtt bármit csinálnál) próbáld megnyitni ezt a fájlt.
+•
+Nyisd meg olvasásra (ifstream).
+•
+Ha a fájl létezik:
+◦
+Olvasd be soronként.
+◦
+Elemezd a sort (pl. keresd az = jelet).
+◦
+Ha a sor saveToFile=1, akkor állítsd a saveToFile változót true-ra.
+◦
+Ha singleLineOutput=1, akkor állítsd a singleLineOutput változót true-ra.
+•
+Ha a fájl nem létezik (első indítás), akkor maradj az alapértelmezett értékeknél.
+Kódvázlat (hogy lásd, hogyan néz ki C++-ban):
+Mentés függvény:
+Java
+void saveSettings() {
+    ofstream f("config.txt");
+    if (f.is_open()) {
+        f << "saveToFile=" << (saveToFile ? 1 : 0) << endl;
+        f << "singleLineOutput=" << (singleLineOutput ? 1 : 0) << endl;
+        f.close();
+    }
+}
+Betöltés függvény:
+Java
+void loadSettings() {
+    ifstream f("config.txt");
+    if (f.is_open()) {
+        string line;
+        while (getline(f, line)) {
+            if (line.find("saveToFile=1") != string::npos) saveToFile = true;
+            else if (line.find("saveToFile=0") != string::npos) saveToFile = false;
+
+            if (line.find("singleLineOutput=1") != string::npos) singleLineOutput = true;
+            else if (line.find("singleLineOutput=0") != string::npos) singleLineOutput = false;
+        }
+        f.close();
+    }
+}
+Hová tedd?
+•
+loadSettings(): A main() függvény legelejére.
+•
+saveSettings(): A settingsMenu()-ben, amikor megváltozik egy érték, VAGY a main() végén, kilépés előtt. (A legegyszerűbb, ha minden módosításkor mentesz).
+Így a programod "emlékezni" fog a legutóbbi állapotra!

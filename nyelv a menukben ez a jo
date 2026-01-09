@@ -1,0 +1,138 @@
+ legegyszerűbb megoldás erre, ha a szövegeket nem égeted be a kódba (cout << "Szöveg"), hanem változókból vagy egy tömbből olvasod ki őket.
+Megoldási javaslat: Nyelvi fájlok (TXT)
+Készíthetsz nyelvi fájlokat, pl.:
+•
+lang_hu.txt (Magyar szövegek)
+•
+lang_en.txt (Angol szövegek)
+A lang_hu.txt tartalma:
+MENU_TITLE=--- FŐMENÜ ---
+MENU_OPT_1=1. Angol -> Magyar
+MENU_OPT_2=2. Magyar -> Angol
+MENU_OPT_3=3. Beállítások
+MENU_OPT_4=4. Kilépés
+MSG_ENTER_SENTENCE=Írj be egy mondatot...
+...
+MENU_TITLE=--- MAIN MENU ---
+MENU_OPT_1=1. English -> Hungarian
+MENU_OPT_2=2. Hungarian -> English
+MENU_OPT_3=3. Settings
+MENU_OPT_4=4. Exit
+MSG_ENTER_SENTENCE=Enter a sentence...
+...
+
+Hogyan valósítsd meg a kódban?
+1.
+Szótár (Map): Használj egy std::map<string, string> változót (pl. messages), ami a kulcsokhoz (pl. "MENU_TITLE") rendeli a betöltött szöveget.
+2.
+Betöltés: Amikor a felhasználó nyelvet vált (vagy induláskor), beolvasod a megfelelő .txt fájlt, és feltöltöd a messages map-et.
+3.
+Kiírás: A kódban a cout sorokat lecseréled erre: cout << messages["MENU_TITLE"] << endl;
+Példakód a betöltésre:
+
+map<string, string> messages;
+
+void loadLanguage(const string& langCode) {
+    string filename = "lang_" + langCode + ".txt";
+    ifstream f(filename);
+    if (!f.is_open()) {
+        // Ha nincs fájl, használj alapértelmezett (beégetett) értékeket
+        return;
+    }
+
+    string line;
+    while (getline(f, line)) {
+        size_t eqPos = line.find('=');
+        if (eqPos != string::npos) {
+            string key = line.substr(0, eqPos);
+            string value = line.substr(eqPos + 1);
+            messages[key] = value;
+        }
+    }
+}
+
+void printMainMenu() {
+    cout << "\n" << messages["MENU_TITLE"] << "\n";
+    cout << messages["MENU_OPT_1"] << endl;
+    // ...
+}
+
+gy, ha a beállításokban átállítod a nyelvet "en"-re, a program meghívja a loadLanguage("en")-t, és onnantól minden angolul jelenik meg. Ha "hu"-ra, akkor magyarul.
+Ez a legprofibb módja a többnyelvűsítésnek anélkül, hogy újra kellene fordítani a programot.
+
+vagy
+
+Ha nem akarsz külső fájlokkal bajlódni, hanem a kódon belül szeretnéd megoldani a többnyelvűséget, az is teljesen jó, és egyszerűbb is, mert minden egy helyen van.
+Itt egy példa arra, hogyan csinálhatod meg elegánsan:
+1. Nyelvi változó
+Kell egy változó, ami tárolja az aktuális nyelvet. int currentLang = 0; (0 = Magyar, 1 = Angol)
+
+2. Szövegek tárolása
+Létrehozhatsz egy struktúrát vagy osztályt, ami tartalmazza az összes szöveget mindkét nyelven. Vagy még egyszerűbben: tömböket használsz.
+Példa tömbökkel:
+
+// Szöveg azonosítók (hogy könnyebb legyen hivatkozni rájuk)
+enum TextID {
+    TXT_MAIN_MENU,
+    TXT_OPT_1,
+    TXT_OPT_2,
+    TXT_OPT_3,
+    TXT_OPT_4,
+    TXT_CHOICE,
+    TXT_EXITING,
+    TXT_TRANSLATE_MODE,
+    TXT_ENTER_SENTENCE,
+    TXT_COMMANDS,
+    // ... többi szöveg ...
+    TXT_COUNT // Ez mindig a végére kell, hogy tudjuk, hány elem van
+};
+
+// A szövegek tárolása: [Nyelv][SzövegID]
+const string texts[2][TXT_COUNT] = {
+    // Magyar (0)
+    {
+        "\n--- FOMENU ---",
+        "1. EN -> HU",
+        "2. HU -> EN",
+        "3. Beallitasok",
+        "4. Kilepes",
+        "Valasztas: ",
+        "Kilepes...",
+        "\n--- FORDITO MOD ---",
+        "Irj be egy mondatot es nyomj Entert.",
+        "Parancsok: /back (vissza), /cls (kepernyo torles)"
+    },
+    // Angol (1)
+    {
+        "\n--- MAIN MENU ---",
+        "1. EN -> HU",
+        "2. HU -> EN",
+        "3. Settings",
+        "4. Exit",
+        "Choice: ",
+        "Exiting...",
+        "\n--- TRANSLATOR MODE ---",
+        "Type a sentence and press Enter.",
+        "Commands: /back (back), /cls (clear screen)"
+    }
+};
+
+// Segédfüggvény a kiíráshoz
+string getTxt(int id) {
+    return texts[currentLang][id];
+}
+
+3. Használat a kódban
+Ahol eddig beégetett szöveg volt, ott most a getTxt függvényt hívod:
+Régi: cout << "\n--- FOMENU ---\n";
+Új: cout << getTxt(TXT_MAIN_MENU) << endl;
+Régi: cout << "Valasztas: ";
+Új: cout << getTxt(TXT_CHOICE);
+
+4. Nyelvváltás
+A beállítások menüben csak annyit kell tenned,
+hogy átállítod a currentLang változót 0-ra vagy 1-re.
+A következő kiírásnál már automatikusan az új nyelven jelennek meg a szövegek.
+Ez a módszer gyors, átlátható, és nem igényel fájlkezelést.
+Ha új nyelvet akarsz (pl. Német), csak bővíted a texts tömböt
+egy harmadik elemmel (texts[3][...]), és átírod a méretet texts[3][TXT_COUNT]-ra.

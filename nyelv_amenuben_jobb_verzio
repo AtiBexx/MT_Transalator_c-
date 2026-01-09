@@ -1,0 +1,96 @@
+1. Új globális változó
+Kell egy változó, ami tárolja a kiválasztott nyelvet (pl. egy indexet vagy stringet).
+
+int selectedLanguageIndex = 1; // Alapértelmezett: 1. nyelv
+
+2. languageMenu függvény
+Ez kezeli a nyelvválasztást.
+
+void languageMenu() {
+    while (true) {
+        clearScreen();
+        cout << "\n--- NYELV BEALLITAS ---\n";
+        cout << "Jelenlegi: " << (selectedLanguageIndex == 1 ? "Angol -> Magyar" : "Magyar -> Angol") << endl;
+        cout << "1. Angol -> Magyar\n";
+        cout << "2. Magyar -> Angol\n";
+        cout << "3. Vissza\n";
+        cout << "Valasztas: ";
+
+        string choice;
+        getline(cin, choice);
+
+        if (choice == "1") {
+            selectedLanguageIndex = 1;
+            saveSettings(); // Mentés
+        } else if (choice == "2") {
+            selectedLanguageIndex = 2;
+            saveSettings(); // Mentés
+        } else if (choice == "3") {
+            break;
+        }
+    }
+}
+3. settingsMenu bővítése
+
+void settingsMenu() {
+    while (true) {
+        cout << "\n--- BEALLITASOK ---\n";
+        cout << "1. Fajlba mentes: " << (saveToFile ? "BE" : "KI") << endl;
+        cout << "2. Egy soros kiiras (CMD-hez): " << (singleLineOutput ? "BE" : "KI") << endl;
+        cout << "3. Nyelv beallitas\n"; // ÚJ
+        cout << "4. Vissza a fomenube\n";
+        cout << "Valasztas: ";
+
+        string choice;
+        getline(cin, choice);
+
+        if (choice == "1") {
+            clearScreen();
+            saveToFile = !saveToFile;
+            saveSettings();
+        } else if (choice == "2") {
+            clearScreen();
+            singleLineOutput = !singleLineOutput;
+            saveSettings();
+        } else if (choice == "3") { // ÚJ
+            languageMenu(); // Átlépés a nyelv menübe
+            clearScreen();
+        } else if (choice == "4") {
+            clearScreen();
+            break;
+        }
+    }
+}
+4. saveSettings és loadSettings bővítése
+
+Hogy megjegyezze a választást.
+Mentés:
+
+f << "language=" << selectedLanguageIndex << endl;
+
+Betöltés:
+
+if (line.find("language=") != string::npos) {
+    // Egyszerű parsolás: az '=' utáni rész
+    string val = line.substr(line.find('=') + 1);
+    selectedLanguageIndex = stoi(val);
+}
+
+5. Használat a main-ben
+A főmenüben vagy a fordítás indításakor a
+selectedLanguageIndex alapján döntöd el, melyik
+modellt töltsd be vagy használd.
+Például, ha a főmenüben
+csak egy "Fordítás indítása"
+gomb van, akkor az a beállított nyelven indul el.
+Vagy ha a főmenüben választasz nyelvet
+(mint most: 1. EN->HU, 2. HU->EN),
+akkor ez a beállítás csak az "alapértelmezést"
+állítja, amit a program induláskor felkínálhat.
+Ha dinamikusan akarsz több nyelvet
+(pl. Német), akkor a
+languageMenu-ben felsorolhatod azokat
+is, és a selectedLanguageIndex értéke lehet
+3, 4, stb. A main-ben pedig egy switch vagy
+if szerkezettel töltöd be a megfelelő modellt
+az index alapján.

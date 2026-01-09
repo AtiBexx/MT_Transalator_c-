@@ -1,0 +1,11 @@
+Kifejezetten angol-magyar (en-hu) és magyar-angol (hu-en) irányra a Helsinki-NLP által kiadott Opus-MT modellekből a jelenleginél (az a kb. 300 MB-os) nincs hivatalosan kiadott "nagyobb" vagy "jobb" verzió. Ők ezt a méretet (Transformer-Base architektúra) tartják a standardnak, ami a legjobb egyensúlyt adja.
+Azonban van egy trükk, ha javítani akarsz a minőségen:
+Opus-MT-TC (Tatoeba-Challenge) modellek: A Helsinki-NLP néha kiad újabb, finomhangolt modelleket a "Tatoeba Challenge" keretében. Ezek néha jobbak, mint a régi "opus-mt-en-hu". Érdemes megnézni a Hugging Face-en a Helsinki-NLP/opus-mt-tc-big-en-hu (ha létezik) vagy hasonló neveket. De sajnos magyarra ritkán csinálnak "big" (nagy) modellt.
+Ami viszont tényleg jobb lehet:
+A Facebook NLLB-200 modellje. Bár ez többnyelvű (200 nyelvet tud), a magyar fordítása sokszor természetesebb és pontosabb, mint az Opus-MT-é, mert sokkal több adaton tanult.
+Ha van 4-8 GB RAM-od és nem zavar, hogy kicsit lassabb, akkor érdemes lehet kipróbálni az NLLB-200-Distilled-600M vagy az NLLB-200-1.3B modellt. Ezeket is át lehet konvertálni CTranslate2 formátumba (vagy letölteni készen), és a programod (kis módosítással a tokenizálásnál, mert az NLLB máshogy kezeli a nyelveket) tudná használni.
+Összefoglalva:
+•
+Opus-MT-ből: Ez a legjobb, ami van.
+•
+Ha jobbat akarsz: NLLB-200 a következő lépcsőfok.

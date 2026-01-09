@@ -1,0 +1,9 @@
+cl translator.cpp ^
+  /I E:\CodeBlocks\modellLLM\ct2\CTranslate2\include ^
+  /EHsc ^
+  /std:c++17 ^
+  /MD ^
+  /link ^
+  /LIBPATH:E:\CodeBlocks\modellLLM\ct2\CTranslate2\build ^
+  ctranslate2.lib
+

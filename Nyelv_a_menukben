@@ -1,0 +1,321 @@
+Ez egy nagyon jó irány a továbbfejlesztéshez! Ha több nyelvet szeretnél támogatni, és dinamikusan kezelni őket, akkor a konfigurációs fájl (INI vagy TXT) a legjobb megoldás. Így nem kell minden új nyelvhez átírni és újrafordítani a programot, csak szerkeszteni egy szöveges fájlt.
+Itt egy vázlat, hogyan valósíthatod meg:
+1. Konfigurációs fájl szerkezete (config.ini)
+Lehetne egy ilyen szerkezet, ahol felsorolod a nyelvpárokat és a hozzájuk tartozó modell útvonalakat:
+Ini
+[Settings]
+saveToFile=0
+singleLineOutput=0
+
+[Languages]
+1=Angol-Magyar|en-hu-f32
+2=Magyar-Angol|hu-en-f32
+3=Német-Magyar|de-hu-f32
+4=Magyar-Német|hu-de-f32
+2. Adatszerkezet a kódban
+Létrehozunk egy struct-ot a nyelvpárok tárolására:
+Java
+struct LanguagePair {
+    string name;       // Pl. "Angol-Magyar"
+    string modelPath;  // Pl. "en-hu-f32" (ebben van a source.spm és a model.bin is)
+};
+
+vector<LanguagePair> languages;
+3. Betöltés (loadSettings bővítése)
+A loadSettings függvényt átírjuk, hogy olvassa be a [Languages] szekciót is, és töltse fel a languages vektort.
+4. Menü dinamikus kiírása
+A main függvényben a fix cout sorok helyett egy ciklussal írjuk ki a lehetőségeket:
+Java
+cout << "\n--- FOMENU ---\n";
+for (int i = 0; i < languages.size(); ++i) {
+    cout << (i + 1) << ". " << languages[i].name << endl;
+}
+cout << (languages.size() + 1) << ". Beallitasok\n";
+cout << (languages.size() + 2) << ". Kilepes\n";
+5. Kiválasztás kezelése
+A felhasználó választása alapján indexeljük a languages vektort, és betöltjük a megfelelő modellt.
+Fontos: Mivel a modellek betöltése időigényes, két út van:
+•
+A. Minden indításkor betöltjük az összes modellt (sok RAM, lassú indulás).
+•
+B. Csak akkor töltjük be a modellt, amikor a felhasználó kiválasztja (gyors indulás, de váltáskor várni kell kicsit). Ez a jobb.
+Kódvázlat a dinamikus betöltéshez:
+Java
+// A main ciklusban:
+int choiceIndex = stoi(choice) - 1; // 0-tól indexelünk
+
+if (choiceIndex >= 0 && choiceIndex < languages.size()) {
+    // Kiválasztott nyelv
+    string path = languages[choiceIndex].modelPath;
+
+    // Itt töltjük be dinamikusan a modellt és a SentencePiece-t
+    // (Ehhez a translateLoop-ot kicsit át kell alakítani, hogy ő töltse be,
+    // vagy egy segédfüggvény adja vissza a betöltött objektumokat)
+
+    runTranslation(path); // Ez egy új függvény lenne, ami mindent elintéz
+}
+Ez a módszer nagyon rugalmas. Ha letöltesz egy új modellt (pl. francia-magyar), csak bemásolod a mappát, beírod a config.ini-be, és máris működik, újrafordítás nélkül!
+Szeretnéd, hogy átírjam a kódot erre a dinamikus, konfiguráció-vezérelt szerkezetre?
+
+--------------------------------
+A koncepció:
+1.
+Létrehozunk egy config.ini fájlt, amiben felsoroljuk a nyelveket és az útvonalaikat.
+2.
+Létrehozunk egy Language struktúrát a kódban.
+3.
+Beolvassuk a konfig fájlt, és feltöltünk egy vector<Language> listát.
+4.
+A menüben dinamikusan írjuk ki a listát.
+5.
+A választás alapján töltjük be a modellt.
+1. A config.ini tartalma (Példa)
+
+[Settings]
+saveToFile=0
+singleLineOutput=0
+
+[Languages]
+Angol-Magyar=en-hu-f32
+Magyar-Angol=hu-en-f32
+Nemet-Magyar=de-hu-f32
+Magyar-Nemet=hu-de-f32
+
+----------------------------------------
+2. A teljes példakód (Dinamikus nyelvkiválasztással)
+#include <ctranslate2/translator.h>
+#include "sentencepiece_processor.h"
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <map>
+
+using namespace std;
+
+// --- Globális változók ---
+bool saveToFile = false;
+bool singleLineOutput = false;
+string outputFile = "translations.txt";
+
+// Nyelv struktúra
+struct LanguageOption {
+    string name;       // Pl. "Angol-Magyar"
+    string modelPath;  // Pl. "en-hu-f32"
+};
+
+vector<LanguageOption> availableLanguages;
+
+// --- Segédfüggvények ---
+
+void clearScreen() {
+    #ifdef _WIN32
+    system("cls");
+    #else
+    system("clear");
+    #endif
+}
+
+// Konfig fájl betöltése (Beállítások + Nyelvek)
+void loadConfig(const string& filename) {
+    ifstream f(filename);
+    if (!f.is_open()) {
+        cerr << "Nem talalhato a konfig fajl: " << filename << endl;
+        return;
+    }
+
+    string line;
+    bool inLanguagesSection = false;
+
+    while (getline(f, line)) {
+        if (line.empty() || line[0] == ';') continue; // Üres sor vagy komment
+
+        // Szekció váltás
+        if (line == "[Languages]") {
+            inLanguagesSection = true;
+            continue;
+        }
+        if (line == "[Settings]") {
+            inLanguagesSection = false;
+            continue;
+        }
+
+        size_t eqPos = line.find('=');
+        if (eqPos == string::npos) continue;
+
+        string key = line.substr(0, eqPos);
+        string value = line.substr(eqPos + 1);
+
+        if (inLanguagesSection) {
+            // Nyelvek beolvasása
+            // key = Név (pl. Angol-Magyar), value = Útvonal (pl. en-hu-f32)
+            availableLanguages.push_back({key, value});
+        } else {
+            // Beállítások beolvasása
+            if (key == "saveToFile") saveToFile = (value == "1");
+            else if (key == "singleLineOutput") singleLineOutput = (value == "1");
+        }
+    }
+    f.close();
+}
+
+// Fordító ciklus (Ugyanaz, mint nálad, csak paraméterként kapja a processzorokat)
+void translateLoop(ctranslate2::Translator& translator,
+                   sentencepiece::SentencePieceProcessor& sp_source,
+                   sentencepiece::SentencePieceProcessor& sp_target) {
+
+    cout << "\n--- FORDITO MOD ---\n";
+    cout << "Irj be egy mondatot es nyomj Entert.\n";
+    cout << "Parancsok: /back (vissza), /cls (kepernyo torles)\n\n";
+
+    string line;
+    while (true) {
+        if (!singleLineOutput) cout << "> ";
+        getline(cin, line);
+
+        if (line == "/back") {
+            clearScreen();
+            break;
+        }
+        if (line == "/cls") {
+            clearScreen();
+            cout << "\n--- FORDITO MOD ---\n";
+            continue;
+        }
+        if (line.empty()) continue;
+
+        // Tokenizálás
+        vector<string> tokens;
+        auto status = sp_source.Encode(line, &tokens);
+        if (!status.ok()) continue;
+        tokens.emplace_back("</s>");
+
+        // Fordítás
+        vector<vector<string>> input = {tokens};
+        try {
+            ctranslate2::TranslationOptions options;
+            options.beam_size = 2;
+            options.max_decoding_length = 200;
+
+            auto results = translator.translate_batch(input, options);
+
+            // Detokenizálás
+            string out;
+            sp_target.Decode(results[0].output(), &out);
+
+            // Kiírás
+            if (singleLineOutput) {
+                cout << "\033[1A\033[2K\r" << line << " -> " << out << endl;
+            } else {
+                cout << line << " -> " << out << endl;
+            }
+
+            if (saveToFile) {
+                ofstream f(outputFile, ios::app);
+                if (f.is_open()) {
+                    f << line << " -> " << out << "\n";
+                    f.close();
+                }
+            }
+        } catch (const std::exception& e) {
+            cerr << "Hiba: " << e.what() << endl;
+        }
+    }
+}
+
+// --- Főprogram ---
+
+int main() {
+    #ifdef _WIN32
+    system("chcp 65001 > nul");
+    system("reg add HKCU\\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f > nul 2>&1");
+    #endif
+
+    // 1. Konfiguráció betöltése
+    loadConfig("config.ini");
+
+    if (availableLanguages.empty()) {
+        cout << "Nincsenek nyelvek a config.ini fajlban! Alapertelmezett hozzaadasa..." << endl;
+        availableLanguages.push_back({"Angol-Magyar (Alap)", "en-hu-f32"});
+        availableLanguages.push_back({"Magyar-Angol (Alap)", "hu-en-f32"});
+    }
+
+    while (true) {
+        cout << "\n--- FOMENU ---\n";
+
+        // Dinamikus menü kiírása
+        for (size_t i = 0; i < availableLanguages.size(); ++i) {
+            cout << (i + 1) << ". " << availableLanguages[i].name << endl;
+        }
+
+        int settingsIndex = availableLanguages.size() + 1;
+        int exitIndex = availableLanguages.size() + 2;
+
+        cout << settingsIndex << ". Beallitasok\n";
+        cout << exitIndex << ". Kilepes\n";
+        cout << "Valasztas: ";
+
+        string choiceStr;
+        getline(cin, choiceStr);
+
+        int choice = 0;
+        try {
+            choice = stoi(choiceStr);
+        } catch (...) {
+            continue;
+        }
+
+        // Ha nyelvet választott
+        if (choice >= 1 && choice <= availableLanguages.size()) {
+            clearScreen();
+
+            // Kiválasztott nyelv adatai
+            LanguageOption& selectedLang = availableLanguages[choice - 1];
+            string modelDir = selectedLang.modelPath;
+            string spmPath = modelDir + "/source.spm"; // Feltételezzük, hogy a mappán belül van
+
+            cout << "Modell betoltese: " << selectedLang.name << " (" << modelDir << ")..." << endl;
+
+            // Ellenőrzés
+            ifstream f(spmPath);
+            if (!f.good()) {
+                cerr << "HIBA: Nem talalhato a SentencePiece modell: " << spmPath << endl;
+                continue;
+            }
+
+            // Dinamikus betöltés (csak akkor foglal memóriát, amikor kell)
+            try {
+                sentencepiece::SentencePieceProcessor sp;
+                sp.Load(spmPath);
+
+                ctranslate2::models::ModelLoader loader(modelDir);
+                ctranslate2::Translator translator(loader);
+
+                cout << "Sikeres betoltes! Indulas..." << endl;
+
+                // Mivel a forrás és cél SP modell gyakran ugyanaz (shared vocabulary),
+                // itt most ugyanazt adjuk át mindkét paraméternek.
+                // Ha külön lenne target.spm, azt is be kéne tölteni.
+                translateLoop(translator, sp, sp);
+
+                clearScreen();
+            } catch (const std::exception& e) {
+                cerr << "Hiba a modell betoltesekor: " << e.what() << endl;
+            }
+        }
+        // Beállítások
+        else if (choice == settingsIndex) {
+            // ... settingsMenu() hívása (ezt már megírtad) ...
+            clearScreen();
+            cout << "[Beallitasok menü helye]" << endl;
+        }
+        // Kilépés
+        else if (choice == exitIndex) {
+            cout << "Kilepes...\n";
+            exit(0);
+        }
+    }
+
+    return 0;
+}
+-------------------------------------------------

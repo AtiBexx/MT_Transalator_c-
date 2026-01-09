@@ -1,0 +1,34 @@
+A megoldás a relatív útvonalak használata.
+Mivel a programod (translator.exe) a cmake-build-debug mappában fut (fejlesztés közben), vagy a projekt gyökerében (ha onnan indítod), a legjobb, ha az .exe fájlhoz képest határozod meg az útvonalat.
+Ha a mappaszerkezeted ilyen:
+projekt_mappa/
+  translator.exe
+  en-hu-f32/
+    source.spm
+    model.bin
+  hu-en-f32/
+    source.spm
+    model.bin
+Akkor a kódban egyszerűen csak a mappa nevét kell megadnod, mindenféle E:\... nélkül.
+Így módosítsd a kódodat (csak a releváns részeket írom le):
+1.
+SentencePiece modellek betöltése:
+Java
+// Relatív útvonalak (az .exe fájl mappájához képest)
+string en_spm_path = "en-hu-f32/source.spm";
+string hu_spm_path = "hu-en-f32/source.spm";
+2.
+CTranslate2 modellek betöltése:
+Java
+// Szintén relatív útvonalak
+ctranslate2::models::ModelLoader enhu_loader("en-hu-f32");
+ctranslate2::models::ModelLoader huen_loader("hu-en-f32");
+Fontos: Amikor a CLionból futtatod a programot (Run), a "Working Directory" (munkakönyvtár) alapértelmezés szerint a cmake-build-debug mappa szokott lenni. Ha a modell mappáid (en-hu-f32, hu-en-f32) a projekt gyökerében vannak (egy szinttel feljebb, mint a cmake-build-debug), akkor a relatív útvonal így nézzen ki:
+"../en-hu-f32/source.spm" (a .. jelenti a szülőkönyvtárat).
+DE: A legbiztosabb megoldás, ha a CMakeLists.txt-ben beállítod, hogy másolja át a modell mappákat is a build mappába, vagy te kézzel átmásolod őket a translator.exe mellé.
+Ha azt szeretnéd, hogy a program "hordozható" legyen (bárhová másolod a mappát, működjön), akkor:
+1.
+Tedd a translator.exe mellé közvetlenül az en-hu-f32 és hu-en-f32 mappákat.
+2.
+A kódban használd a sima "en-hu-f32/source.spm" formátumot.
+Így bárhová viszed a mappát, a program megtalálja a fájlokat, mert mindig maga mellett keresi őket.

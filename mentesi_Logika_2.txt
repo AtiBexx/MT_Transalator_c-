@@ -1,0 +1,68 @@
+De, simán lehet külön `.cpp`-be! 😊
+
+C++-ban ez teljesen normális: a mentést/olvasást kezelő függvényeket **külön fájlba** teszed, mondjuk `settings.cpp`-be, a hozzá tartozó header fájlba (`settings.h`) deklarálod őket. A fő program csak meghívja őket.
+
+### Példa struktúra:
+
+**settings.h**
+
+```cpp
+#pragma once
+
+// Globális változók (vagy getter/setter függvények)
+extern bool saveToFile;
+extern bool singleLineOutput;
+
+// Funkciók deklarációja
+void saveSettingsBinary();
+void loadSettingsBinary();
+```
+
+**settings.cpp**
+
+```cpp
+#include "settings.h"
+#include <fstream>
+
+bool saveToFile = false;
+bool singleLineOutput = false;
+
+void saveSettingsBinary() {
+    std::ofstream f("config.sav", std::ios::binary);
+    if (f.is_open()) {
+        f.write(reinterpret_cast<char*>(&saveToFile), sizeof(saveToFile));
+        f.write(reinterpret_cast<char*>(&singleLineOutput), sizeof(singleLineOutput));
+        f.close();
+    }
+}
+
+void loadSettingsBinary() {
+    std::ifstream f("config.sav", std::ios::binary);
+    if (f.is_open()) {
+        f.read(reinterpret_cast<char*>(&saveToFile), sizeof(saveToFile));
+        f.read(reinterpret_cast<char*>(&singleLineOutput), sizeof(singleLineOutput));
+        f.close();
+    }
+}
+```
+
+**main.cpp**
+
+```cpp
+#include "settings.h"
+#include <iostream>
+
+int main() {
+    loadSettingsBinary();
+
+    // ... a program többi része
+    saveSettingsBinary();
+    return 0;
+}
+```
+
+💡 **Megjegyzés:**
+
+* Az `extern` kulcsszó a header-ben jelzi, hogy a változó **másik fájlban van definiálva**.
+* Így a `main.cpp` is látja a változókat és a függvényeket, de a tényleges memóriafoglalás a `settings.cpp`-ben történik.
+
