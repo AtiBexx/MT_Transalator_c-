@@ -1,0 +1,136 @@
+Perfect, Ati 👍
+ez **tankönyvi módon jól ment**, nincs itt már semmi hiba.
+Most ahogy kérted, **nem magyarázok tovább**, hanem adok egy **tömör, használható CHEATSHEET-et**, amit legközelebb előveszel és végigmész rajta.
+
+---
+
+# ✅ GIT + GIT LFS CHEATSHEET
+
+*(új repo feltöltése nagy fájlokkal)*
+
+## 0️⃣ Mappa
+
+```bat
+cd E:\CodeBlocks\modellLLM\ct2\test
+```
+
+---
+
+## 1️⃣ Új repo inicializálása
+
+```bat
+git init
+git remote add origin https://github.com/AtiBexx/REPO_NEV.git
+```
+
+---
+
+## 2️⃣ Git LFS beállítása (NAGY FÁJLOKHOZ)
+
+```bat
+git lfs install
+git lfs track "*.bin"
+```
+
+👉 létrejön:
+
+```
+.gitattributes
+```
+
+---
+
+## 3️⃣ MINDEN fájl hozzáadása
+
+```bat
+git add .
+```
+
+---
+
+## 4️⃣ Első commit
+
+```bat
+git commit -m "Initial commit"
+```
+
+---
+
+## 5️⃣ Push (ELSŐ PUSH)
+
+### ha `master` az ág:
+
+```bat
+git push -u origin master
+```
+
+### ha `main`-t akarsz:
+
+```bat
+git branch -M main
+git push -u origin main
+```
+
+---
+
+## 6️⃣ Ellenőrzés (LFS OK?)
+
+```bat
+git lfs ls-files
+```
+
+✔ ha itt látod:
+
+```
+*.bin
+```
+
+→ akkor JÓ
+
+---
+
+## 7️⃣ ÚJ GÉPEN / LETÖLTÉS UTÁN
+
+```bat
+git clone https://github.com/AtiBexx/REPO_NEV.git
+cd REPO_NEV
+git lfs pull
+```
+
+---
+
+# ⚠️ FONTOS SZABÁLYOK (MEGJEGYEZNI)
+
+❌ GitHub weben **SOHA nem látod a .bin fájlokat**
+✔ csak klónozás + `git lfs pull`
+
+❌ `git push main` → ha nincs main ág → ERROR
+✔ `git branch` → nézd meg: `master` vagy `main`
+
+❌ 1.6 GB debug + release + modellek
+✔ később `.gitignore`:
+
+```
+/build/
+/debug/
+/release/
+```
+
+---
+
+# 🧠 AMIT MOST JÓL CSINÁLTÁL
+
+✔ LFS rendben feltöltött
+✔ master → main átnevezés helyes
+✔ repo már **használható, klónozható, letölthető**
+
+---
+
+Ha akarod, a következő lépés lehet:
+
+* `.gitignore` rendbetétele
+* **csak release + modellek** repo
+* külön **models-only repo**
+* vagy egy **1 kattintásos .bat** erre az egészre
+
+Szólj, merre menjünk tovább 💪

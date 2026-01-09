@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"E:/CodeBlocks/modellLLM/ct2/test/cmake-build-release/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,123 @@
+Ah, Ati 😅, ez teljesen normális — amit próbáltál, az **nem parancs**, hanem **a `.gitattributes` fájl tartalma**, amit a Git LFS hoz létre. Nem kell közvetlenül beírni a parancssorba.
+
+Helyesen így kell csinálni:
+
+---
+
+### 1️⃣ LFS telepítése és a `.bin` fájlok jelölése
+
+```bash
+git lfs install
+git lfs track "*.bin"
+```
+
+* Ez **automatikusan létrehoz egy `.gitattributes` fájlt** a mappában.
+* Ha megnézed:
+
+```bash
+type .gitattributes
+```
+
+vagy Windows-on:
+
+```bash
+notepad .gitattributes
+```
+
+* Látnod kell benne ezt:
+
+```
+*.bin filter=lfs diff=lfs merge=lfs -text
+```
+
+Ez **megmondja a Gitnek**, hogy a `.bin` fájlok LFS-sel menjenek fel, **nem kell kézzel beírni**.
+
+---
+
+### 2️⃣ Add az összes fájlt
+
+Most már a `.bin` fájlok is LFS-sel mennek fel:
+
+```bash
+git add .
+```
+
+* A `.` jelenti az **összes fájlt és almappát** a mappában.
+
+---
+
+### 3️⃣ Commit és push
+
+```bash
+git commit -m "Add all files with LFS"
+git push -u origin main
+```
+
+Oké, Ati 😅, ez egy **klasszikus Git hiba**:
+
+```
+error: src refspec main does not match any
+```
+
+### Mit jelent?
+
+* A `git push -u origin main` azt mondja: **“push-oljuk a `main` ágat”**.
+* A hiba azt jelzi, hogy **nincs `main` ág** a lokális repódban.
+* Ez azért van, mert **git init** után a Git alapértelmezett ág neve régebbi Git verziókban `master`, vagy **még nincs commit**.
+
+---
+
+### Megoldás lépésről lépésre
+
+1️⃣ **Ellenőrizd a lokális ág nevét:**
+
+```bash
+git branch
+```
+
+* Ha üres, még nincs commit, akkor nem fog semmi látszódni.
+* Ha `master`-t mutat, akkor a helyes push:
+
+```bash
+git push -u origin master
+```
+
+---
+
+2️⃣ **Ha még nincs commitod**, előbb csinálj egy commitot:
+
+```bash
+git add .
+git commit -m "Initial commit with all files"
+```
+
+* Ez **létrehozza az első commitot** a lokális repóban.
+
+---
+
+3️⃣ **Push a GitHubra**
+
+* Ha a lokális ág neve `master`:
+
+```bash
+git push -u origin master
+```
+
+* Ha szeretnéd, hogy `main` legyen (GitHub új alapértelmezett), átnevezheted az ágat:
+
+```bash
+git branch -M main
+git push -u origin main
+```
+
+* `-M` → átnevezi az ágat (master → main), és force push nélkül is megy.
+
+---
+
+💡 Összefoglalva:
+A hiba oka: **még nincs commit, vagy a lokális ág neve nem `main`**.
+Először commit, utána push.
+
+---
+
+

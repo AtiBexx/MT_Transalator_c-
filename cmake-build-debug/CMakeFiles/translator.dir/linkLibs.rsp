@@ -1,0 +1,1 @@
+ E:/CodeBlocks/modellLLM/ct2/test/libctranslate2.dll.a E:/CodeBlocks/modellLLM/ct2/test/libsentencepiece.dll.a -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 
