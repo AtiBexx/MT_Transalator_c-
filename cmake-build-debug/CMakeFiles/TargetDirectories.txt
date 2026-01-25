@@ -1,3 +1,0 @@
-E:/CodeBlocks/modellLLM/ct2/test/cmake-build-debug/CMakeFiles/translator.dir
-E:/CodeBlocks/modellLLM/ct2/test/cmake-build-debug/CMakeFiles/edit_cache.dir
-E:/CodeBlocks/modellLLM/ct2/test/cmake-build-debug/CMakeFiles/rebuild_cache.dir

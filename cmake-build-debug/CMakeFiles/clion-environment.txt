@@ -1,5 +1,0 @@
-ToolSet: 13.0 w64 (local)@C:\coding\mingw64
-Ninja: 1.12.1@F:\intelij\CLion 2025.2.3\bin\ninja\win\x64\ninja.exe
-Options: 
-
-Options:
